@@ -1,0 +1,27 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+jupyter = "*"
+jupyterlab = "*"
+ipython = "*"
+pandas = "*"
+numpy = "*"
+altair = "*"
+nltk = "*"
+"0738a1f" = {path = "./genizah-tools"}
+lxml = "*"
+
+
+[dev-packages]
+
+
+
+[requires]
+
+python_version = "3.6"
