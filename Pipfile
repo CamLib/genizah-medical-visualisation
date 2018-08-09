@@ -6,9 +6,8 @@ name = "pypi"
 
 
 [packages]
-
-jupyter = "*"
-jupyterlab = "*"
+# 0.33 doesn't support Vega 3, but altair doesn't support Vega 4 yet...
+jupyterlab = "<0.33"
 ipython = "*"
 pandas = "*"
 numpy = "*"
@@ -24,4 +23,4 @@ lxml = "*"
 
 [requires]
 
-python_version = "3.6"
+python_version = "3"
