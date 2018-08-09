@@ -1,32 +1,35 @@
 import re
-import csv
-import sys
+import warnings
 
 from lxml import etree
-import docopt
+
+namespaces = {'tei': 'http://www.tei-c.org/ns/1.0'}
+genizah_subject = 'http://id.loc.gov/authorities/subjects/sh85018717.html'
+
+filedesc = '/tei:TEI/tei:teiHeader/tei:fileDesc'
+ms_desc = f'{filedesc}/tei:sourceDesc/tei:msDesc'
 
 
-
-_namespaces = {'tei': 'http://www.tei-c.org/ns/1.0'}
-_genizah_subject = 'http://id.loc.gov/authorities/subjects/sh85018717.html'
-
-_filedesc = '/tei:TEI/tei:teiHeader/tei:fileDesc'
-_ms_desc = f'{_filedesc}/tei:sourceDesc/tei:msDesc'
+class GenizahDataWarning(UserWarning):
+    pass
 
 
-def _strip_tei_ns(pattern):
-    return re.sub(r'\btei:', '', pattern)
+# Unfortunatley the metadata uses namespaces in some files and not in others, so we need to match TEI elements with no
+# namespace in addition to the TEI namespace.
+def _strip_tei_ns(expr):
+    return re.sub(r'\btei:', '', expr)
 
 
-def _xpath_optional_ns(el, pattern):
-    return (el.xpath(pattern, namespaces=_namespaces) or
-            el.xpath(_strip_tei_ns(pattern)))
+def _xpath_optional_ns(el, expr):
+    """Evaluate an xpath expression with and without the tei namespace."""
+    return (el.xpath(expr, namespaces=namespaces) or
+            el.xpath(_strip_tei_ns(expr)))
 
 
 def is_genizah_item(root_el):
     return _xpath_optional_ns(root_el, (
         f'boolean(/tei:TEI/tei:teiHeader/tei:profileDesc/'
-        f'tei:textClass/tei:keywords//tei:ref[@target="{_genizah_subject}"])'))
+        f'tei:textClass/tei:keywords//tei:ref[@target="{genizah_subject}"])'))
 
 
 def is_medical_item(root_el):
@@ -35,58 +38,115 @@ def is_medical_item(root_el):
 
 def get_title(root_el):
     return _xpath_optional_ns(root_el,
-                              f'normalize-space({_ms_desc}/'
+                              f'normalize-space({ms_desc}/'
                               f'tei:msContents/tei:msItem[1]/tei:title)')
 
 
 def get_summary(root_el):
-    return _xpath_optional_ns(root_el, f'normalize-space({_ms_desc}/'
+    return _xpath_optional_ns(root_el, f'normalize-space({ms_desc}/'
                                        f'tei:msContents/tei:summary)')
 
 
 def get_date_range(root_el):
     dates = _xpath_optional_ns(
-        root_el, f'{_ms_desc}/tei:history/tei:origin/tei:date[1]')
+        root_el, f'{ms_desc}/tei:history/tei:origin/tei:date[1]')
 
     if dates:
         date = dates[0]
         start = date.attrib['notBefore']
         end = date.attrib['notAfter']
-        return [start, end]
+        return (start, end)
 
 
-_extract_genizah_titles_cmd_usage = '''
-usage: genizah-titles [options] <file>...
+def get_material_type(root_el):
+    return _xpath_optional_ns(
+        root_el, f'normalize-space({ms_desc}'
+                 '/tei:physDesc/tei:objectDesc/tei:supportDesc/@material)') or None
 
-options:
 
-'''
+def get_fragment_size(root_el):
+    dimensions = _xpath_optional_ns(
+        root_el, f'{ms_desc}/tei:physDesc/tei:objectDesc/'
+                 'tei:supportDesc/tei:extent/tei:dimensions[@unit="cm"][count(*) = 2][tei:height][tei:width]/*/child::text()')
 
-def parse_all(files):
-    for f in files:
+    if dimensions:
         try:
-            yield f, etree.parse(f)
-        except etree.XMLSyntaxError as e:
-            print(f'Error: Invalid XML file: {f}', file=sys.stderr)
-
-def extract_genizah_titles_cmd():
-    args = docopt.docopt(_extract_genizah_titles_cmd_usage)
-
-    names = 'path title summary date_start date_end'.split()
-    writer = csv.DictWriter(sys.stdout, fieldnames=names)
-
-    xml_content = parse_all(args['<file>'])
-
-    writer.writerows(get_info(f, x) for (f, x) in xml_content if
-                  is_genizah_item(x) and is_medical_item(x))
+            width, height = (float(x) for x in dimensions)
+            return (width, height)
+        except ValueError as e:
+            warnings.warn(f'non-numeric value for tei:width or tei:height column: {dimensions}',
+                          GenizahDataWarning)
 
 
-def get_info(file_path, root_el):
-    info = dict(path=file_path,
-                title=get_title(root_el),
-                summary=get_summary(root_el))
+def get_layout(root_el):
+    layouts = _xpath_optional_ns(
+        root_el, f'{ms_desc}/tei:physDesc/tei:objectDesc/tei:layoutDesc/tei:layout[@columns]')
+    if not layouts:
+        return
 
-    info.update(dict(zip(('date_start', 'date_end'),
-                         get_date_range(root_el) or [None] * 2)))
+    layout = layouts[0]
+    try:
+        columns = int(layout.attrib['columns'])
+    except ValueError as e:
+        warnings.warn(f'non-integer value for tei:layout columns attribute: {layout.attrib["columns"]}',
+                      GenizahDataWarning)
+        return
 
-    return info
+    lines_expr = re.search(r'\b(\d+) lines\b', layout.text or '')
+    if lines_expr:
+        return (columns, int(lines_expr.group(1)))
+
+
+def filename(path):
+    return re.sub('^(?:.*/)?([^/]+)\.[a-z]+$', r'\1', path)
+
+
+def parse_xml(name, file):
+    try:
+        return etree.parse(file)
+    # Some of the TEI files have invalid id attribute values, ignore those
+    except etree.XMLSyntaxError as e:
+        msg = str(e)
+        if 'xml:id' in msg and 'is not an NCName' in msg:
+            warnings.warn(f"Ignoring XML file with invalid id attribute: {name}",
+                          GenizahDataWarning)
+            return None
+        raise
+
+
+def get_data(path, root_el):
+    date_range = get_date_range(root_el)
+    size = get_fragment_size(root_el)
+    layout = get_layout(root_el)
+    return {
+        'classmark': filename(path),
+        'title': get_title(root_el),
+        'summary': get_summary(root_el),
+        'material': get_material_type(root_el),
+        'date_start': date_range[0] if date_range else None,
+        'date_end': date_range[1] if date_range else None,
+        'width': size[0] if size else None,
+        'height': size[1] if size else None,
+        'columns': layout[0] if layout else None,
+        'lines': layout[1] if layout else None
+    }
+
+
+def extract_tar_xml(tar_archive):
+    for entry in tar_archive:
+        xml = parse_xml(entry.name, tar_archive.extractfile(entry))
+
+        if xml:
+            yield entry.name, xml
+
+
+def medical_elements(all_els):
+    """
+    Filter an iterable of (name, element) tuples to include only Genizah medical
+    items.
+
+    :param content: An iterable of (name, element) tuples
+    :return: The filtered iterable.
+    """
+    return ((name, el) for name, el in all_els
+            if is_genizah_item(el) and is_medical_item(el))
