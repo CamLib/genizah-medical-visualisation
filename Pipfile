@@ -6,7 +6,7 @@ name = "pypi"
 
 
 [packages]
-# 0.33 doesn't support Vega 3, but altair doesn't support Vega 4 yet...
+
 jupyterlab = "<0.33"
 ipython = "*"
 pandas = "*"
@@ -15,6 +15,11 @@ altair = "*"
 nltk = "*"
 "0738a1f" = {path = "./genizah-tools"}
 lxml = "*"
+scikit-learn = "*"
+scipy = "*"
+matplotlib = "*"
+yattag = "*"
+jupyter-contrib-nbextensions = "*"
 
 
 [dev-packages]
