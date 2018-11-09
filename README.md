@@ -1,5 +1,7 @@
 # Genizah Medical Data Visualisation
 
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/CamLib/genizah-medical-visualisation/master?urlpath=lab%2Ftree%2Fnotebooks%2F04-data-visualisation.ipynb)
+
 This repository contains examples of using Python data science tools to
 undertake exploratory data analysis on metadata from [Cambridge Digital
 Library's Cairo Genizah][cudl-genizah]
@@ -7,10 +9,17 @@ collection.
 
 ## Get started
 
+Click the launch binder button above to open the notebooks immediately in your
+browser.
+
+## Run on your computer
+
+You can download the notebooks and interact with them in Jupyter Lab on your own
+computer.
+
 ### Prerequisites
 
-To use the content in this repository, you'll need Python 3.5+ and [pipenv]
-installed.
+You'll need Python 3.5+ and [pipenv] installed.
 
 ### Set up
 
