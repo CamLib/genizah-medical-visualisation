@@ -5,12 +5,3 @@
 *.egg-info
 __pycache__
 altair-data-*
-/medical-data/
-!/medical-data/2018-07-20/
-!/medical-data/2018-07-10/
-!/medical-data/words-tagged.csv
-!/medical-data/mel-words-tagged_2018-07-20.csv
-!/medical-data/README.md
-!/medical-data/bundle-genizah-tei.sh
-!/medical-data/genizah-tei.tar.lz
-
