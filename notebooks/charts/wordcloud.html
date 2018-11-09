@@ -1,0 +1,40 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .vega-actions a {
+        margin-right: 12px;
+        color: #757575;
+        font-weight: normal;
+        font-size: 13px;
+    }
+    .error {
+        color: red;
+    }
+  </style>
+
+<script src="https://cdn.jsdelivr.net/npm//vega@4"></script>
+<script src="https://cdn.jsdelivr.net/npm//vega-embed@3"></script>
+
+</head>
+<body>
+  <div id="vis"></div>
+  <script type="text/javascript">
+    var spec = {"$schema": "https://vega.github.io/schema/vega/v4.json", "width": 800, "height": 600, "padding": 10, "config": {"background": "#2e434f"}, "data": [{"name": "term-occurrences", "url": "vega-term-occurrences.csv", "format": {"type": "csv"}, "transform": [{"type": "formula", "as": "angle", "expr": "[-45, 0, 45][round(random() * 3)]"}]}], "scales": [{"name": "color", "type": "ordinal", "domain": {"data": "term-occurrences", "field": "type"}, "range": {"scheme": "pastel1"}}], "marks": [{"type": "text", "from": {"data": "term-occurrences"}, "encode": {"enter": {"text": {"field": "text"}, "align": {"value": "center"}, "baseline": {"value": "alphabetic"}, "fill": {"scale": "color", "field": "type"}}, "update": {"fillOpacity": {"value": 1}}, "hover": {"fillOpacity": {"value": 0.65}}}, "transform": [{"type": "wordcloud", "size": [800, 600], "text": {"field": "text"}, "rotate": {"field": "datum.angle"}, "font": "Helvetica Neue, Arial", "fontSize": {"field": "datum.occurrences"}, "fontSizeRange": [8, 56], "padding": 2}]}]};
+    var embed_opt = {"mode": "vega"};
+
+    function showError(el, error){
+        el.innerHTML = ('<div class="error">'
+                        + '<p>JavaScript Error: ' + error.message + '</p>'
+                        + "<p>This usually means there's a typo in your chart specification. "
+                        + "See the javascript console for the full traceback.</p>"
+                        + '</div>');
+        throw error;
+    }
+    const el = document.getElementById('vis');
+    vegaEmbed("#vis", spec, embed_opt)
+      .catch(error => showError(el, error));
+  </script>
+</body>
+</html>

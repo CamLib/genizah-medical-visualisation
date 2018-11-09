@@ -1,12 +1,9 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
 
-
 [packages]
-
 jupyterlab = "<0.33"
 ipython = "*"
 pandas = "*"
@@ -21,11 +18,7 @@ matplotlib = "*"
 yattag = "*"
 jupyter-contrib-nbextensions = "*"
 
-
 [dev-packages]
 
-
-
 [requires]
-
 python_version = "3"
