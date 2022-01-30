@@ -1,7 +1,0 @@
-*.iml
-.idea
-.ipynb_checkpoints
-.~*
-*.egg-info
-__pycache__
-altair-data-*
