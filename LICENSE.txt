@@ -1,8 +1,0 @@
-Genizah TEI metadata is copyright Cambridge University Library and available
-under the Creative Commons Attribution-NonCommercial 3.0 Unported (CC BY-NC 3.0)
-license.
-    https://creativecommons.org/licenses/by-nc/3.0/
-
-Other source code and data is copyright Cambridge University Library available 
-under the Attribution 4.0 International (CC BY 4.0) license.
-    https://creativecommons.org/licenses/by/4.0/
